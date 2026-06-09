@@ -1,0 +1,10 @@
+{
+    "cmake.ctest.neverDebugTestsWithLaunchConfiguration": true,
+    "cmake.ctestArgs": [
+        "--output-on-failure"
+    ],
+    "cmake.testExplorer.enableCodeLens": true,
+    "gcovViewer.buildDirectories": [
+        "c:\\Users\\Nimfrodian\\Documents\\rtdb_playground\\build"
+    ]
+}
