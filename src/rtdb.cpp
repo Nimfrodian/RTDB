@@ -12,8 +12,14 @@ namespace rtdb {
 
     void init(const rtdb_init_t& cfg)
     {
-        rtdb_crc_fn = cfg.crc_fn;
-        g_error_handler = cfg.error_handler;
+        if (cfg.crc_fn != nullptr)
+        {
+            rtdb_crc_fn = cfg.crc_fn;
+        }
+        if (cfg.error_handler != nullptr)
+        {
+            g_error_handler = cfg.error_handler;
+        }
         initialized = true;
     }
 
