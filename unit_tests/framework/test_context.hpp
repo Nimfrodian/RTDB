@@ -28,7 +28,7 @@ uint32_t test_crc32(uint32_t crc, uint8_t const *buf, uint32_t len)
 void standard_init()
 {
     rtdb_init_t cfg{};
-    cfg.crc_fn = test_crc32;
+    cfg.crc_handler = test_crc32;
     cfg.error_handler = rtdb_error_handler;
     init(cfg);
 }

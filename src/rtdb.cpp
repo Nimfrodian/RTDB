@@ -6,16 +6,16 @@ namespace rtdb {
     bool initialized = false;
     std::array<rtdb_var_t, RTDB_SIZE> rtdb_vars;
 
-    static uint32_t (*rtdb_crc_fn)(uint32_t, uint8_t const*, uint32_t) = software_CRC;
+    static uint32_t (*rtdb_crc_handler)(uint32_t, uint8_t const*, uint32_t) = softwareCRC;
 
     // Error handler callback; can be nullptr
     rtdb_error_handler_t g_error_handler = nullptr;
 
     void init(const rtdb_init_t& cfg)
     {
-        if (cfg.crc_fn != nullptr)
+        if (cfg.crc_handler != nullptr)
         {
-            rtdb_crc_fn = cfg.crc_fn;
+            rtdb_crc_handler = cfg.crc_handler;
         }
         if (cfg.error_handler != nullptr)
         {
@@ -24,7 +24,14 @@ namespace rtdb {
         initialized = true;
     }
 
-    uint32_t software_CRC(uint32_t crc, uint8_t const *buf, uint32_t len)
+    void report_error(rtdb_error_t err, const char* context)
+    {
+        if (g_error_handler) {
+            g_error_handler(err, context);
+        }
+    }
+
+    uint32_t softwareCRC(uint32_t crc, uint8_t const *buf, uint32_t len) noexcept
     {
         uint32_t c = crc;
         for (uint32_t i = 0; i < len; i++) {
@@ -44,8 +51,8 @@ namespace rtdb {
     {
         const uint8_t* metadata = reinterpret_cast<const uint8_t*>(var);
         uint32_t metadataLength = static_cast<uint32_t>(offsetof(rtdb_var_t, crc));
-        uint32_t crc = rtdb_crc_fn(0, metadata, metadataLength);
-        crc = rtdb_crc_fn(crc, static_cast<const uint8_t*>(var->data), var->size * var->elementSize);
+        uint32_t crc = rtdb_crc_handler(0, metadata, metadataLength);
+        crc = rtdb_crc_handler(crc, static_cast<const uint8_t*>(var->data), var->size * var->elementSize);
         return crc;
     }
 

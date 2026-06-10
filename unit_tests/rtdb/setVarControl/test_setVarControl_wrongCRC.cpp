@@ -15,7 +15,7 @@ uint32_t corrupted_crc32(uint32_t crc, uint8_t const *buf, uint32_t len)
 void setUp()
 {
     rtdb_init_t cfg{};
-    cfg.crc_fn = corrupted_crc32;
+    cfg.crc_handler = corrupted_crc32;
     cfg.error_handler = rtdb_error_handler;
     init(cfg);
 

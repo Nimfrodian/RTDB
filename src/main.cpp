@@ -7,7 +7,7 @@
 int main()
 {
     rtdb::rtdb_init_t initCfg = {
-        .crc_fn = esp_rom_crc32_le
+        .crc_handler = esp_rom_crc32_le
     };
     rtdb::init(initCfg);
     someModule_init();
