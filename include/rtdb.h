@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <iostream>
 #include <type_traits>
+#include <cstdint>
+#include <array>
 #include "rtdb_vars.h"
 
 
@@ -64,7 +66,7 @@ typedef struct {
     void* data;
     uint32_t crc;
 } rtdb_var_t;
-extern rtdb_var_t rtdb_vars[RTDB_SIZE];
+extern std::array<rtdb_var_t, RTDB_SIZE> rtdb_vars;
 
 uint32_t calculateCRC(const rtdb_var_t *var);
 
@@ -103,7 +105,7 @@ constexpr rtdb_type_t getTypeForT() {
     else if constexpr (std::is_same_v<T, double>) return RTDB_TYPE_DOUBLE;
 }
 
-static rtdb_error_t freeData(rtdb_type_t type, void* data)
+static rtdb_error_t freeData(rtdb_type_t type, void* data) noexcept
 {
     rtdb_error_t err = RTDB_ERR_UNDEFINED;
     if (data != nullptr)
@@ -271,7 +273,7 @@ rtdb_error_t setVar(const rtdb_id_t id, T value, uint32_t index = 0)
             if (static_cast<double>(value) < var.minValue.f || static_cast<double>(value) > var.maxValue.f)
             {
                 err = RTDB_ERR_VALUE_OUT_OF_RANGE;
-                report_error(err, "rtdb::setVar: Index out of range");
+                report_error(err, "rtdb::setVar: Value out of range");
             }
         }
         else if constexpr (std::is_unsigned_v<T>)
@@ -339,6 +341,6 @@ rtdb_error_t getVar(const rtdb_id_t id, T& outValue, uint32_t index = 0)
     return err;
 }
 
-constexpr uint32_t software_CRC(uint32_t crc, uint8_t const *buf, uint32_t len);
+uint32_t software_CRC(uint32_t crc, uint8_t const *buf, uint32_t len) noexcept;
 
 }

@@ -1,9 +1,10 @@
 #include "rtdb.h"
 #include <cstddef>
+#include <array>
 
 namespace rtdb {
     bool initialized = false;
-    rtdb_var_t rtdb_vars[RTDB_SIZE] = {};
+    std::array<rtdb_var_t, RTDB_SIZE> rtdb_vars;
 
     static uint32_t (*rtdb_crc_fn)(uint32_t, uint8_t const*, uint32_t) = software_CRC;
 
