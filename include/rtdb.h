@@ -339,4 +339,6 @@ rtdb_error_t getVar(const rtdb_id_t id, T& outValue, uint32_t index = 0)
     return err;
 }
 
+uint32_t software_CRC(uint32_t crc, uint8_t const *buf, uint32_t len);
+
 }
