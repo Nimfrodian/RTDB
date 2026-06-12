@@ -50,5 +50,31 @@ static rtdb_error_t freeData(rtdb_type_t type, void* data) noexcept
     }
     return err;
 }
+
+template<typename T>
+bool checkIfOutOfBounds(T value, rtdb_var_t metadata)
+{
+    bool isInBounds = false;
+    if constexpr (std::is_floating_point_v<T>)
+    {
+        if (static_cast<double>(value) < metadata.minValue.f || static_cast<double>(value) > metadata.maxValue.f)
+        {
+            isInBounds = true;
+        }
+    }
+    else if constexpr (std::is_unsigned_v<T>)
+    {
+        if (static_cast<uint64_t>(value) < metadata.minValue.u || static_cast<uint64_t>(value) > metadata.maxValue.u)
+        {
+            isInBounds = true;
+        }
+    }
+    else if (static_cast<int64_t>(value) < metadata.minValue.i || static_cast<int64_t>(value) > metadata.maxValue.i)
+    {
+            isInBounds = true;
+    }
+    return isInBounds;
+}
+
 uint32_t softwareCRC(uint32_t crc, uint8_t const *buf, uint32_t len) noexcept;
 }

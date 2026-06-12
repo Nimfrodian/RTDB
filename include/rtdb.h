@@ -60,71 +60,51 @@ rtdb_error_t configVar(rtdb_id_t id, T defaultValue, T min, T max, uint32_t size
         err = RTDB_ERR_CRC_MISMATCH;
         report_error(err, "rtdb::configVar: CRC mismatch");
     }
+    else if  (defaultValue < min || defaultValue > max)
+    {
+        err = RTDB_ERR_DEFAULT_VALUE_OUT_OF_RANGE;
+        report_error(err, "rtdb::configVar: Default value out of range");
+    }
     else
     {
+        rtdb_var_t& oldVar = rtdb_vars[id];
+        err = freeData(oldVar.type, oldVar.data);
+
+        rtdb_var_t var;
+        var.id = id;
+        var.type = getTypeForT<T>();
+        var.size = size;
+        var.elementSize = sizeof(T);
+        var.controlType = RTDB_CONTROL_NORMAL;
+        var.data = new T[size];
+        T* arr = static_cast<T*>(var.data);
+        for (uint32_t i = 0; i < size; ++i)
+        {
+            arr[i] = defaultValue;
+        }
+
         if constexpr (std::is_floating_point_v<T>)
         {
-            if (static_cast<double>(defaultValue) < min || static_cast<double>(defaultValue) > max)
-            {
-                err = RTDB_ERR_DEFAULT_VALUE_OUT_OF_RANGE;
-                report_error(err, "rtdb::configVar: Default value out of range");
-            }
+            var.minValue.f = static_cast<double>(min);
+            var.maxValue.f = static_cast<double>(max);
+            var.defValue.f = static_cast<double>(defaultValue);
         }
         else if constexpr (std::is_unsigned_v<T>)
         {
-            if (static_cast<uint64_t>(defaultValue) < min || static_cast<uint64_t>(defaultValue) > max)
-            {
-                err = RTDB_ERR_DEFAULT_VALUE_OUT_OF_RANGE;
-                report_error(err, "rtdb::configVar: Default value out of range");
-            }
+            var.minValue.u = static_cast<uint64_t>(min);
+            var.maxValue.u = static_cast<uint64_t>(max);
+            var.defValue.u = static_cast<uint64_t>(defaultValue);
         }
-        else if (static_cast<int64_t>(defaultValue) < min || static_cast<int64_t>(defaultValue) > max)
+        else
         {
-            err = RTDB_ERR_DEFAULT_VALUE_OUT_OF_RANGE;
-            report_error(err, "rtdb::configVar: Default value out of range");
+            var.minValue.i = static_cast<int64_t>(min);
+            var.maxValue.i = static_cast<int64_t>(max);
+            var.defValue.i = static_cast<int64_t>(defaultValue);
         }
 
-        if (err == RTDB_ERR_UNDEFINED)
-        {
-            rtdb_var_t& oldVar = rtdb_vars[id];
-            err = freeData(oldVar.type, oldVar.data);
-
-            rtdb_var_t var;
-            var.id = id;
-            var.type = getTypeForT<T>();
-            var.size = size;
-            var.elementSize = sizeof(T);
-            var.controlType = RTDB_CONTROL_NORMAL;
-            var.data = new T[size];
-            T* arr = static_cast<T*>(var.data);
-            for (uint32_t i = 0; i < size; ++i)
-            {
-                arr[i] = defaultValue;
-            }
-
-            if constexpr (std::is_floating_point_v<T>)
-            {
-                var.minValue.f = static_cast<double>(min);
-                var.maxValue.f = static_cast<double>(max);
-                var.defValue.f = static_cast<double>(defaultValue);
-            }
-            else if constexpr (std::is_unsigned_v<T>)
-            {
-                var.minValue.u = static_cast<uint64_t>(min);
-                var.maxValue.u = static_cast<uint64_t>(max);
-                var.defValue.u = static_cast<uint64_t>(defaultValue);
-            }
-            else
-            {
-                var.minValue.i = static_cast<int64_t>(min);
-                var.maxValue.i = static_cast<int64_t>(max);
-                var.defValue.i = static_cast<int64_t>(defaultValue);
-            }
-
-            var.crc = calculateCRC(&var);
-            rtdb_vars[id] = var;
-            err = RTDB_OK;
-        }
+        var.crc = calculateCRC(&var);
+        rtdb_vars[id] = var;
+        err = RTDB_OK;
     }
     return err;
 }
@@ -157,40 +137,19 @@ rtdb_error_t setVar(const rtdb_id_t id, T value, uint32_t index = 0)
         err = RTDB_ERR_CRC_MISMATCH;
         report_error(err, "rtdb::setVar: CRC mismatch");
     }
+    else if  (checkIfOutOfBounds(value, rtdb_vars[id]))
+    {
+        err = RTDB_ERR_VALUE_OUT_OF_RANGE;
+        report_error(err, "rtdb::setVar: Value out of range");
+    }
     else
     {
-        rtdb_var_t var = rtdb_vars[id];
-        if constexpr (std::is_floating_point_v<T>)
+        if (rtdb_vars[id].controlType == RTDB_CONTROL_NORMAL)
         {
-            if (static_cast<double>(value) < var.minValue.f || static_cast<double>(value) > var.maxValue.f)
-            {
-                err = RTDB_ERR_VALUE_OUT_OF_RANGE;
-                report_error(err, "rtdb::setVar: Value out of range");
-            }
-        }
-        else if constexpr (std::is_unsigned_v<T>)
-        {
-            if (static_cast<uint64_t>(value) < var.minValue.u || static_cast<uint64_t>(value) > var.maxValue.u)
-            {
-                err = RTDB_ERR_VALUE_OUT_OF_RANGE;
-                report_error(err, "rtdb::setVar: Value out of range");
-            }
-        }
-        else if (static_cast<int64_t>(value) < var.minValue.i || static_cast<int64_t>(value) > var.maxValue.i)
-        {
-            err = RTDB_ERR_VALUE_OUT_OF_RANGE;
-            report_error(err, "rtdb::setVar: Value out of range");
-        }
-
-        if (err == RTDB_ERR_UNDEFINED)
-        {
-            if (var.controlType == RTDB_CONTROL_NORMAL)
-            {
-                T* arr = static_cast<T*>(var.data);
-                arr[index] = value;
-                rtdb_vars[id].crc = calculateCRC(&var);
-                err = RTDB_OK;
-            }
+            T* arr = static_cast<T*>(rtdb_vars[id].data);
+            arr[index] = value;
+            rtdb_vars[id].crc = calculateCRC(&rtdb_vars[id]);
+            err = RTDB_OK;
         }
     }
     return err;

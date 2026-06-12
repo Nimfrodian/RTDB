@@ -2,6 +2,9 @@
 #include <cstddef>
 #include <array>
 
+static constexpr uint32_t CRC_POLYNOMIAL = 0xEDB88320L;
+static constexpr uint32_t CRC_INVERT_MASK = 0xFFFFFFFFL;
+
 namespace rtdb {
     bool initialized = false;
     std::array<rtdb_var_t, RTDB_SIZE> rtdb_vars;
@@ -38,13 +41,13 @@ namespace rtdb {
             c ^= buf[i];
             for (int j = 0; j < 8; j++) {
                 if (c & 1) {
-                    c = 0xEDB88320L ^ (c >> 1);
+                    c = CRC_POLYNOMIAL ^ (c >> 1);
                 } else {
                     c = c >> 1;
                 }
             }
         }
-        return c ^ 0xFFFFFFFFL;
+        return c ^ CRC_INVERT_MASK;
     }
 
     uint32_t calculateCRC(const rtdb_var_t* var)
