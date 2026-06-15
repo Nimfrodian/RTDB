@@ -137,6 +137,11 @@ rtdb_error_t setVar(const rtdb_id_t id, T value, uint32_t index = 0)
         err = RTDB_ERR_INDEX_OUT_OF_RANGE;
         report_error(err, "rtdb::setVar: Index out of range");
     }
+    else if (rtdb_vars[id].type != getTypeForT<T>())
+    {
+        err = RTDB_ERR_TYPE_MISMATCH;
+        report_error(err, "rtdb::setVar: Variable type mismatch");
+    }
     else if  (checkIfOutOfBounds(value, rtdb_vars[id]))
     {
         err = RTDB_ERR_VALUE_OUT_OF_RANGE;
@@ -182,6 +187,11 @@ rtdb_error_t getVar(const rtdb_id_t id, T& outValue, uint32_t index = 0)
     {
         err = RTDB_ERR_INDEX_OUT_OF_RANGE;
         report_error(err, "rtdb::getVar: Index out of range");
+    }
+    else if (rtdb_vars[id].type != getTypeForT<T>())
+    {
+        err = RTDB_ERR_TYPE_MISMATCH;
+        report_error(err, "rtdb::getVar: Variable type mismatch");
     }
     else
     {
