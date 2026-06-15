@@ -1,9 +1,8 @@
 #pragma once
+#include <array>
 #include <cstdint>
 #include <iostream>
 #include <type_traits>
-#include <cstdint>
-#include <array>
 #include "rtdb_vars.h"
 #include "rtdb_types.h"
 #include "rtdb_utils.h"
@@ -17,10 +16,10 @@ extern std::array<rtdb_var_t, RTDB_SIZE> rtdb_vars;
 using rtdb_crc_handler_t = uint32_t (*)(uint32_t crc, uint8_t const *buf, uint32_t len);
 using rtdb_error_handler_t = void(*)(rtdb_error_t err, const char* context);
 
-typedef struct {
+struct rtdb_init_t{
     rtdb_crc_handler_t crc_handler;
     rtdb_error_handler_t error_handler;  // Optional error callback
-} rtdb_init_t;
+};
 
 void report_error(rtdb_error_t err, const char* context);
 
@@ -41,6 +40,7 @@ constexpr rtdb_type_t getTypeForT() {
     else if constexpr (std::is_same_v<T, uint64_t>) return RTDB_TYPE_UINT64;
     else if constexpr (std::is_same_v<T, float>) return RTDB_TYPE_FLOAT;
     else if constexpr (std::is_same_v<T, double>) return RTDB_TYPE_DOUBLE;
+    else return RTDB_TYPE_UNDEFINED;
 }
 
 template<typename T>
