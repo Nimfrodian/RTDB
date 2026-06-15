@@ -122,6 +122,11 @@ rtdb_error_t setVar(const rtdb_id_t id, T value, uint32_t index = 0)
         err = RTDB_ERR_INVALID_ID;
         report_error(err, "rtdb::setVar: Invalid ID");
     }
+    else if (calculateCRC(&rtdb_vars[id]) != rtdb_vars[id].crc)
+    {
+        err = RTDB_ERR_CRC_MISMATCH;
+        report_error(err, "rtdb::setVar: CRC mismatch");
+    }
     else if (rtdb_vars[id].data == nullptr)
     {
         err = RTDB_ERR_VAR_NOT_CONFIGURED;
@@ -131,11 +136,6 @@ rtdb_error_t setVar(const rtdb_id_t id, T value, uint32_t index = 0)
     {
         err = RTDB_ERR_INDEX_OUT_OF_RANGE;
         report_error(err, "rtdb::setVar: Index out of range");
-    }
-    else if (calculateCRC(&rtdb_vars[id]) != rtdb_vars[id].crc)
-    {
-        err = RTDB_ERR_CRC_MISMATCH;
-        report_error(err, "rtdb::setVar: CRC mismatch");
     }
     else if  (checkIfOutOfBounds(value, rtdb_vars[id]))
     {
@@ -168,6 +168,11 @@ rtdb_error_t getVar(const rtdb_id_t id, T& outValue, uint32_t index = 0)
         err = RTDB_ERR_INVALID_ID;
         report_error(err, "rtdb::getVar: Invalid ID");
     }
+    else if (calculateCRC(&rtdb_vars[id]) != rtdb_vars[id].crc)
+    {
+        err = RTDB_ERR_CRC_MISMATCH;
+        report_error(err, "rtdb::getVar: CRC mismatch");
+    }
     else if (rtdb_vars[id].data == nullptr)
     {
         err = RTDB_ERR_VAR_NOT_CONFIGURED;
@@ -177,11 +182,6 @@ rtdb_error_t getVar(const rtdb_id_t id, T& outValue, uint32_t index = 0)
     {
         err = RTDB_ERR_INDEX_OUT_OF_RANGE;
         report_error(err, "rtdb::getVar: Index out of range");
-    }
-    else if (calculateCRC(&rtdb_vars[id]) != rtdb_vars[id].crc)
-    {
-        err = RTDB_ERR_CRC_MISMATCH;
-        report_error(err, "rtdb::getVar: CRC mismatch");
     }
     else
     {
