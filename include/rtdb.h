@@ -110,7 +110,7 @@ rtdb_error_t configVar(rtdb_id_t id, T defaultValue, T min, T max, uint32_t size
 }
 
 template<typename T>
-rtdb_error_t setVar(const rtdb_id_t id, T value, uint32_t index = 0)
+static inline rtdb_error_t internalSetVar(const rtdb_id_t id, T value, uint32_t index = 0, rtdb_control_t controlType = RTDB_CONTROL_NORMAL)
 {
     rtdb_error_t err = RTDB_ERR_UNDEFINED;
     if (!initialized) {
@@ -149,7 +149,7 @@ rtdb_error_t setVar(const rtdb_id_t id, T value, uint32_t index = 0)
     }
     else
     {
-        if (rtdb_vars[id].controlType == RTDB_CONTROL_NORMAL)
+        if (rtdb_vars[id].controlType == controlType)
         {
             T* arr = static_cast<T*>(rtdb_vars[id].data);
             arr[index] = value;
@@ -158,6 +158,18 @@ rtdb_error_t setVar(const rtdb_id_t id, T value, uint32_t index = 0)
         }
     }
     return err;
+}
+
+template<typename T>
+rtdb_error_t setVar(const rtdb_id_t id, T value, uint32_t index = 0)
+{
+    return internalSetVar(id, value, index, RTDB_CONTROL_NORMAL);
+}
+
+template<typename T>
+rtdb_error_t overrideVar(const rtdb_id_t id, T value, uint32_t index = 0)
+{
+    return internalSetVar(id, value, index, RTDB_CONTROL_OVERRIDE);
 }
 
 template<typename T>

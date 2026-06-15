@@ -36,10 +36,42 @@ void normalUsecase(void)
         setVar(SOME_MODULE_MYARR_UINT8, static_cast<uint8_t>(2+i), i);
         uint8_t myArrVal;
         getVar(SOME_MODULE_MYARR_UINT8, myArrVal, i);
-        UNITY_TEST_ASSERT_EQUAL_UINT8(2+i, myArrVal, __LINE__, "Setting and getting returns different values!");
+        UNITY_TEST_ASSERT_EQUAL_UINT8(2 + i, myArrVal, __LINE__, "Setting and getting values do not match expected values!");
     }
 
+    setVarControl(SOME_MODULE_MYARR_UINT8, RTDB_CONTROL_OVERRIDE);
+    for (int i = 0; i < 5; i++)
+    {
+        uint8_t prevMyArrVal;
+        getVar(SOME_MODULE_MYARR_UINT8, prevMyArrVal, i);
+        setVar(SOME_MODULE_MYARR_UINT8, static_cast<uint8_t>(2 + i), i);
+        uint8_t newMyArrVal;
+        getVar(SOME_MODULE_MYARR_UINT8, newMyArrVal, i);
+        UNITY_TEST_ASSERT_EQUAL_UINT8(newMyArrVal, prevMyArrVal, __LINE__, "Value was updated despite override lock being active!");
+
+        overrideVar(SOME_MODULE_MYARR_UINT8, static_cast<uint8_t>(2 + i), i);
+        uint8_t overridenMyArrVal;
+        getVar(SOME_MODULE_MYARR_UINT8, overridenMyArrVal, i);
+        UNITY_TEST_ASSERT_EQUAL_UINT8(2 + i, overridenMyArrVal, __LINE__, "Override operation did not update the value as expected!");
+    }
+
+    setVarControl(SOME_MODULE_MYARR_UINT8, RTDB_CONTROL_NORMAL);
+    for (int i = 0; i < 5; i++)
+    {
+        uint8_t prevMyArrVal;
+        getVar(SOME_MODULE_MYARR_UINT8, prevMyArrVal, i);
+        overrideVar(SOME_MODULE_MYARR_UINT8, static_cast<uint8_t>(3 + i), i);
+        uint8_t newMyArrVal;
+        getVar(SOME_MODULE_MYARR_UINT8, newMyArrVal, i);
+        UNITY_TEST_ASSERT_EQUAL_UINT8(newMyArrVal, prevMyArrVal, __LINE__, "Override operation should be disabled when control is set to normal!");
+
+        setVar(SOME_MODULE_MYARR_UINT8, static_cast<uint8_t>(3 + i), i);
+        uint8_t overridenMyArrVal;
+        getVar(SOME_MODULE_MYARR_UINT8, overridenMyArrVal, i);
+        UNITY_TEST_ASSERT_EQUAL_UINT8(3 + i, overridenMyArrVal, __LINE__, "Set operation failed to update value when control is normal!");
+    }
 }
+
 
 int main(void)
 {
