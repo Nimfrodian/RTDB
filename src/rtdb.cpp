@@ -50,7 +50,7 @@ namespace rtdb {
         return c ^ CRC_INVERT_MASK;
     }
 
-    uint32_t calculateCRC(const rtdb_var_t* var)
+    uint32_t calculateCRC(const rtdb_var_t* var) noexcept
     {
         const uint8_t* metadata = reinterpret_cast<const uint8_t*>(var);
         uint32_t metadataLength = static_cast<uint32_t>(offsetof(rtdb_var_t, crc));
