@@ -24,7 +24,7 @@ struct rtdb_init_t{
 void report_error(rtdb_error_t err, const char* context);
 
 void init(const rtdb_init_t& cfg);
-uint32_t calculateCRC(const rtdb_var_t *var);
+uint32_t calculateCRC(const rtdb_var_t *var) noexcept;
 rtdb_error_t setVarControl(rtdb_id_t id, rtdb_control_t controlType);
 
 template<typename T>
@@ -70,12 +70,15 @@ rtdb_error_t configVar(rtdb_id_t id, T defaultValue, T min, T max, uint32_t size
         rtdb_var_t& oldVar = rtdb_vars[id];
         err = freeData(oldVar.type, oldVar.data);
 
-        rtdb_var_t var;
+        rtdb_var_t var{};
         var.id = id;
         var.type = getTypeForT<T>();
         var.size = size;
         var.elementSize = sizeof(T);
         var.controlType = RTDB_CONTROL_NORMAL;
+        var.unit[0] = '\0';
+        var.quality = RTDB_QUALITY_UNRELIABLE;
+        var.comment = nullptr;
         var.data = new T[size];
         T* arr = static_cast<T*>(var.data);
         for (uint32_t i = 0; i < size; ++i)

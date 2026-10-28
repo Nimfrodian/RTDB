@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace rtdb
 {
 typedef enum {
@@ -40,6 +42,13 @@ typedef enum {
     RTDB_CONTROL_NORMAL,
 } rtdb_control_t;
 
+typedef char rtdb_unit_t[16];
+
+typedef enum {
+    RTDB_QUALITY_UNRELIABLE = 0,
+    RTDB_QUALITY_GOOD,
+} rtdb_quality_t;
+
 typedef union {
     int64_t i;
     uint64_t u;
@@ -55,6 +64,9 @@ typedef struct {
     rtdb_value_t minValue;
     rtdb_value_t maxValue;
     rtdb_control_t controlType;
+    rtdb_unit_t unit;
+    rtdb_quality_t quality;
+    const char* comment; // Must point to a static string.
     void* data;
     uint32_t crc;
 } rtdb_var_t;
