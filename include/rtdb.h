@@ -2,6 +2,7 @@
 #include <array>
 #include <cstdint>
 #include <iostream>
+#include <new>
 #include <type_traits>
 #include "rtdb_vars.h"
 #include "rtdb_types.h"
@@ -26,6 +27,7 @@ void report_error(rtdb_error_t err, const char* context);
 void init(const rtdb_init_t& cfg);
 uint32_t calculateCRC(const rtdb_var_t *var) noexcept;
 rtdb_error_t setVarControl(rtdb_id_t id, rtdb_control_t controlType);
+rtdb_error_t removeVar(rtdb_id_t id);
 
 template<typename T>
 constexpr rtdb_type_t getTypeForT() {
@@ -65,10 +67,26 @@ rtdb_error_t configVar(rtdb_id_t id, T defaultValue, T min, T max, uint32_t size
         err = RTDB_ERR_DEFAULT_VALUE_OUT_OF_RANGE;
         report_error(err, "rtdb::configVar: Default value out of range");
     }
+    else if (size == 0)
+    {
+        err = RTDB_ERR_SIZE;
+        report_error(err, "rtdb::configVar: Size must be greater than zero");
+    }
     else
     {
         rtdb_var_t& oldVar = rtdb_vars[id];
-        err = freeData(oldVar.type, oldVar.data);
+        T* arr = new (std::nothrow) T[size];
+        if (arr == nullptr)
+        {
+            err = RTDB_ERR_ALLOCATION_FAILED;
+            report_error(err, "rtdb::configVar: Allocation failed");
+            return err;
+        }
+
+        for (uint32_t i = 0; i < size; ++i)
+        {
+            arr[i] = defaultValue;
+        }
 
         rtdb_var_t var{};
         var.id = id;
@@ -79,11 +97,14 @@ rtdb_error_t configVar(rtdb_id_t id, T defaultValue, T min, T max, uint32_t size
         var.unit[0] = '\0';
         var.quality = RTDB_QUALITY_UNRELIABLE;
         var.comment = nullptr;
-        var.data = new T[size];
-        T* arr = static_cast<T*>(var.data);
-        for (uint32_t i = 0; i < size; ++i)
+        var.data = arr;
+
+        if (freeData(oldVar.type, oldVar.data) != RTDB_OK)
         {
-            arr[i] = defaultValue;
+            delete[] arr;
+            err = RTDB_ERR_TYPE_MISMATCH;
+            report_error(err, "rtdb::configVar: Existing variable has an invalid type");
+            return err;
         }
 
         if constexpr (std::is_floating_point_v<T>)
@@ -125,15 +146,15 @@ static inline rtdb_error_t internalSetVar(const rtdb_id_t id, T value, uint32_t 
         err = RTDB_ERR_INVALID_ID;
         report_error(err, "rtdb::setVar: Invalid ID");
     }
-    else if (calculateCRC(&rtdb_vars[id]) != rtdb_vars[id].crc)
-    {
-        err = RTDB_ERR_CRC_MISMATCH;
-        report_error(err, "rtdb::setVar: CRC mismatch");
-    }
     else if (rtdb_vars[id].data == nullptr)
     {
         err = RTDB_ERR_VAR_NOT_CONFIGURED;
         report_error(err, "rtdb::setVar: Variable not configured");
+    }
+    else if (calculateCRC(&rtdb_vars[id]) != rtdb_vars[id].crc)
+    {
+        err = RTDB_ERR_CRC_MISMATCH;
+        report_error(err, "rtdb::setVar: CRC mismatch");
     }
     else if (index >= rtdb_vars[id].size)
     {
@@ -188,15 +209,15 @@ rtdb_error_t getVar(const rtdb_id_t id, T& outValue, uint32_t index = 0)
         err = RTDB_ERR_INVALID_ID;
         report_error(err, "rtdb::getVar: Invalid ID");
     }
-    else if (calculateCRC(&rtdb_vars[id]) != rtdb_vars[id].crc)
-    {
-        err = RTDB_ERR_CRC_MISMATCH;
-        report_error(err, "rtdb::getVar: CRC mismatch");
-    }
     else if (rtdb_vars[id].data == nullptr)
     {
         err = RTDB_ERR_VAR_NOT_CONFIGURED;
         report_error(err, "rtdb::getVar: Variable not configured");
+    }
+    else if (calculateCRC(&rtdb_vars[id]) != rtdb_vars[id].crc)
+    {
+        err = RTDB_ERR_CRC_MISMATCH;
+        report_error(err, "rtdb::getVar: CRC mismatch");
     }
     else if (index >= rtdb_vars[id].size)
     {

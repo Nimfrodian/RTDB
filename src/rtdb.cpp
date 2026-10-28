@@ -89,4 +89,35 @@ namespace rtdb {
         }
         return err;
     }
+
+    rtdb_error_t removeVar(rtdb_id_t id)
+    {
+        rtdb_error_t err = RTDB_ERR_UNDEFINED;
+        if (!initialized) {
+            err = RTDB_ERR_MODULE_UNINITIALIZED;
+            report_error(err, "rtdb::removeVar: RTDB not initialized");
+        }
+        else if (id >= RTDB_SIZE) {
+            err = RTDB_ERR_INVALID_ID;
+            report_error(err, "rtdb::removeVar: Invalid ID");
+        }
+        else if (rtdb_vars[id].data == nullptr) {
+            err = RTDB_ERR_VAR_NOT_CONFIGURED;
+            report_error(err, "rtdb::removeVar: Variable not configured");
+        }
+        else if (calculateCRC(&rtdb_vars[id]) != rtdb_vars[id].crc) {
+            err = RTDB_ERR_CRC_MISMATCH;
+            report_error(err, "rtdb::removeVar: CRC mismatch");
+        }
+        else if ((err = freeData(rtdb_vars[id].type, rtdb_vars[id].data)) != RTDB_OK) {
+            report_error(err, "rtdb::removeVar: Variable has an invalid type");
+        }
+        else {
+            rtdb_var_t var{};
+            var.id = id;
+            rtdb_vars[id] = var;
+            err = RTDB_OK;
+        }
+        return err;
+    }
 }

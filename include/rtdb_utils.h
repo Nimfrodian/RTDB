@@ -7,11 +7,13 @@ namespace rtdb
 
 static rtdb_error_t freeData(rtdb_type_t type, void* data) noexcept
 {
-    rtdb_error_t err = RTDB_ERR_UNDEFINED;
-    if (data != nullptr)
+    if (data == nullptr)
     {
-        switch (type)
-        {
+        return RTDB_OK;
+    }
+
+    switch (type)
+    {
             case RTDB_TYPE_BOOL:
                 delete[] static_cast<bool*>(data);
                 break;
@@ -45,10 +47,10 @@ static rtdb_error_t freeData(rtdb_type_t type, void* data) noexcept
             case RTDB_TYPE_DOUBLE:
                 delete[] static_cast<double*>(data);
                 break;
-            // No default - CRC and compiler guarantee it nevers gets to here
-        }
+            default:
+                return RTDB_ERR_TYPE_MISMATCH;
     }
-    return err;
+    return RTDB_OK;
 }
 
 template<typename T>

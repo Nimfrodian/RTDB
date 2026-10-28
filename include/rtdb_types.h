@@ -14,9 +14,10 @@ typedef enum {
     RTDB_ERR_VAR_NOT_CONFIGURED,
     RTDB_ERR_TYPE_MISMATCH,
     RTDB_ERR_INVALID_ID,
+    RTDB_ERR_ALLOCATION_FAILED,
 
     RTDB_ERR_SIZE,
-    RTDB_ERR_UNDEFINED
+    RTDB_ERR_UNDEFINED,
 } rtdb_error_t;
 
 typedef enum {
