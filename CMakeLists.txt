@@ -5,6 +5,20 @@ project(RTDB_PLAYGROUND LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(RTDB_VARS_INCLUDE_DIR "" CACHE PATH "Directory containing the consumer-provided rtdb_vars.h")
+if (NOT RTDB_VARS_INCLUDE_DIR)
+    if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+        set(RTDB_VARS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/unit_tests/config")
+        message(STATUS "Using the test-only rtdb_vars.h fixture")
+    else()
+        message(FATAL_ERROR "Set RTDB_VARS_INCLUDE_DIR to the directory containing the consumer's rtdb_vars.h")
+    endif()
+endif()
+
+if (NOT EXISTS "${RTDB_VARS_INCLUDE_DIR}/rtdb_vars.h")
+    message(FATAL_ERROR "${RTDB_VARS_INCLUDE_DIR} does not contain rtdb_vars.h")
+endif()
+
 # --------------------------------------------------
 # Coverage option
 # --------------------------------------------------
@@ -32,6 +46,7 @@ add_library(rtdb STATIC
 
 target_include_directories(rtdb PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${RTDB_VARS_INCLUDE_DIR}
 )
 
 # IMPORTANT: ensure library is also instrumented

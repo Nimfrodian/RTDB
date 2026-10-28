@@ -47,6 +47,7 @@ typedef char rtdb_unit_t[16];
 
 typedef enum {
     RTDB_QUALITY_UNRELIABLE = 0,
+    RTDB_QUALITY_BAD,
     RTDB_QUALITY_GOOD,
 } rtdb_quality_t;
 

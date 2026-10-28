@@ -1,10 +1,11 @@
 #pragma once
 #include <array>
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <new>
 #include <type_traits>
-#include "rtdb_vars.h"
+#include <rtdb_vars.h>
 #include "rtdb_types.h"
 #include "rtdb_utils.h"
 
@@ -28,6 +29,7 @@ void init(const rtdb_init_t& cfg);
 uint32_t calculateCRC(const rtdb_var_t *var) noexcept;
 rtdb_error_t setVarControl(rtdb_id_t id, rtdb_control_t controlType);
 rtdb_error_t removeVar(rtdb_id_t id);
+rtdb_error_t setVarQuality(rtdb_id_t id, rtdb_quality_t quality);
 
 template<typename T>
 constexpr rtdb_type_t getTypeForT() {
@@ -46,7 +48,15 @@ constexpr rtdb_type_t getTypeForT() {
 }
 
 template<typename T>
-rtdb_error_t configVar(rtdb_id_t id, T defaultValue, T min, T max, uint32_t size = 1)
+rtdb_error_t configVar(
+    rtdb_id_t id,
+    T defaultValue,
+    T min,
+    T max,
+    uint32_t size = 1,
+    const char* unit = "",
+    const char* comment = "",
+    rtdb_quality_t quality = RTDB_QUALITY_UNRELIABLE)
 {
     rtdb_error_t err = RTDB_ERR_UNDEFINED;
     if (!initialized) {
@@ -72,6 +82,11 @@ rtdb_error_t configVar(rtdb_id_t id, T defaultValue, T min, T max, uint32_t size
         err = RTDB_ERR_SIZE;
         report_error(err, "rtdb::configVar: Size must be greater than zero");
     }
+    else if (unit == nullptr || std::strlen(unit) >= sizeof(rtdb_unit_t))
+    {
+        err = RTDB_ERR_SIZE;
+        report_error(err, "rtdb::configVar: Unit must fit in rtdb_unit_t");
+    }
     else
     {
         rtdb_var_t& oldVar = rtdb_vars[id];
@@ -94,9 +109,9 @@ rtdb_error_t configVar(rtdb_id_t id, T defaultValue, T min, T max, uint32_t size
         var.size = size;
         var.elementSize = sizeof(T);
         var.controlType = RTDB_CONTROL_NORMAL;
-        var.unit[0] = '\0';
-        var.quality = RTDB_QUALITY_UNRELIABLE;
-        var.comment = nullptr;
+        std::memcpy(var.unit, unit, std::strlen(unit) + 1);
+        var.quality = quality;
+        var.comment = comment != nullptr ? comment : "";
         var.data = arr;
 
         if (freeData(oldVar.type, oldVar.data) != RTDB_OK)
@@ -134,7 +149,12 @@ rtdb_error_t configVar(rtdb_id_t id, T defaultValue, T min, T max, uint32_t size
 }
 
 template<typename T>
-static inline rtdb_error_t internalSetVar(const rtdb_id_t id, T value, uint32_t index = 0, rtdb_control_t controlType = RTDB_CONTROL_NORMAL)
+static inline rtdb_error_t internalSetVar(
+    const rtdb_id_t id,
+    T value,
+    uint32_t index = 0,
+    rtdb_control_t controlType = RTDB_CONTROL_NORMAL,
+    rtdb_quality_t quality = RTDB_QUALITY_GOOD)
 {
     rtdb_error_t err = RTDB_ERR_UNDEFINED;
     if (!initialized) {
@@ -177,6 +197,7 @@ static inline rtdb_error_t internalSetVar(const rtdb_id_t id, T value, uint32_t 
         {
             T* arr = static_cast<T*>(rtdb_vars[id].data);
             arr[index] = value;
+            rtdb_vars[id].quality = quality;
             rtdb_vars[id].crc = calculateCRC(&rtdb_vars[id]);
             err = RTDB_OK;
         }
@@ -185,15 +206,35 @@ static inline rtdb_error_t internalSetVar(const rtdb_id_t id, T value, uint32_t 
 }
 
 template<typename T>
-rtdb_error_t setVar(const rtdb_id_t id, T value, uint32_t index = 0)
+rtdb_error_t setVar(
+    const rtdb_id_t id,
+    T value,
+    uint32_t index = 0,
+    rtdb_quality_t quality = RTDB_QUALITY_GOOD)
 {
-    return internalSetVar(id, value, index, RTDB_CONTROL_NORMAL);
+    return internalSetVar(id, value, index, RTDB_CONTROL_NORMAL, quality);
 }
 
 template<typename T>
-rtdb_error_t overrideVar(const rtdb_id_t id, T value, uint32_t index = 0)
+rtdb_error_t setVar(const rtdb_id_t id, T value, rtdb_quality_t quality)
 {
-    return internalSetVar(id, value, index, RTDB_CONTROL_OVERRIDE);
+    return setVar(id, value, 0, quality);
+}
+
+template<typename T>
+rtdb_error_t overrideVar(
+    const rtdb_id_t id,
+    T value,
+    uint32_t index = 0,
+    rtdb_quality_t quality = RTDB_QUALITY_GOOD)
+{
+    return internalSetVar(id, value, index, RTDB_CONTROL_OVERRIDE, quality);
+}
+
+template<typename T>
+rtdb_error_t overrideVar(const rtdb_id_t id, T value, rtdb_quality_t quality)
+{
+    return overrideVar(id, value, 0, quality);
 }
 
 template<typename T>

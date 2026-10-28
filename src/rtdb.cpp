@@ -120,4 +120,31 @@ namespace rtdb {
         }
         return err;
     }
+
+    rtdb_error_t setVarQuality(rtdb_id_t id, rtdb_quality_t quality)
+    {
+        rtdb_error_t err = RTDB_ERR_UNDEFINED;
+        if (!initialized) {
+            err = RTDB_ERR_MODULE_UNINITIALIZED;
+            report_error(err, "rtdb::setVarQuality: RTDB not initialized");
+        }
+        else if (id >= RTDB_SIZE) {
+            err = RTDB_ERR_INVALID_ID;
+            report_error(err, "rtdb::setVarQuality: Invalid ID");
+        }
+        else if (rtdb_vars[id].data == nullptr) {
+            err = RTDB_ERR_VAR_NOT_CONFIGURED;
+            report_error(err, "rtdb::setVarQuality: Variable not configured");
+        }
+        else if (calculateCRC(&rtdb_vars[id]) != rtdb_vars[id].crc) {
+            err = RTDB_ERR_CRC_MISMATCH;
+            report_error(err, "rtdb::setVarQuality: CRC mismatch");
+        }
+        else {
+            rtdb_vars[id].quality = quality;
+            rtdb_vars[id].crc = calculateCRC(&rtdb_vars[id]);
+            err = RTDB_OK;
+        }
+        return err;
+    }
 }
